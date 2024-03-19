@@ -83,6 +83,16 @@ alias_reuse: *foo";
                     ParseYaml(list[i], parentName + fieldName + "[" + i + "].");
                 }
             }
+            // Handle case where the field value is another type of object
+            else
+            {
+                // Print the field value as a string
+                Console.WriteLine("<tr>");
+                Console.WriteLine($"<td>{parentName + fieldName}</td>");
+                Console.WriteLine($"<td>Value</td>");
+                Console.WriteLine($"<td>{GetDatatype(fieldValue)}</td>");
+                Console.WriteLine("</tr>");
+            }
         }
     }
 }
