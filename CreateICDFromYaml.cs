@@ -81,9 +81,11 @@ alias_reuse: *foo";
     }
 
     static string GetDatatype(YamlNode node)
+{
+    switch (node.NodeType)
     {
-        if (node is YamlScalarNode scalarNode)
-        {
+        case YamlNodeType.Scalar:
+            var scalarNode = (YamlScalarNode)node;
             switch (scalarNode.Tag)
             {
                 case "tag:yaml.org,2002:null":
@@ -92,21 +94,18 @@ alias_reuse: *foo";
                     return "boolean";
                 case "tag:yaml.org,2002:int":
                     return "integer";
-                default:
+                case "tag:yaml.org,2002:str":
                     return "string";
+                default:
+                    return "unknown";
             }
-        }
-        else if (node is YamlMappingNode)
-        {
-            return "mapping";
-        }
-        else if (node is YamlSequenceNode)
-        {
+        case YamlNodeType.Sequence:
             return "sequence";
-        }
-        else
-        {
+        case YamlNodeType.Mapping:
+            return "object";
+        default:
             return "unknown";
-        }
     }
+}
+
 }
