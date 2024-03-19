@@ -35,7 +35,7 @@ alias: &foo
 alias_reuse: *foo";
 
         var deserializer = new DeserializerBuilder().Build();
-        var yamlObject = deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
+        var yamlObject = deserializer.Deserialize<dynamic>(yamlContent);
 
         Console.WriteLine("<html>");
         Console.WriteLine("<head><title>YAML to HTML Table</title></head>");
@@ -50,54 +50,32 @@ alias_reuse: *foo";
         Console.WriteLine("</html>");
     }
 
-  static void ParseYaml(object obj, string parentName = "")
-{
-    if (obj is Dictionary<string, object> dictionary)
+    static void ParseYaml(dynamic obj, string parentName = "")
     {
-        foreach (var entry in dictionary)
+        if (obj is Dictionary<string, object> dictionary)
         {
-            // Get the field name
-            string fieldName = entry.Key;
-
-            // Get the field value
-            object fieldValue = entry.Value;
-
-            // Print the information in HTML table row format
-            Console.WriteLine("<tr>");
-            Console.WriteLine($"<td>{parentName}</td>");
-            Console.WriteLine($"<td>{fieldName}</td>");
-            Console.WriteLine($"<td>{GetDatatype(fieldValue)}</td>");
-            Console.WriteLine("</tr>");
-
-            // If the field value is a dictionary, recursively parse it
-            if (fieldValue is Dictionary<string, object> nestedDictionary)
+            foreach (var entry in dictionary)
             {
-                ParseYaml(nestedDictionary, parentName + fieldName + ".");
-            }
-            else if (fieldValue is List<object> list)
-            {
-                // If the field value is a list, iterate through its elements
-                for (int i = 0; i < list.Count; i++)
-                {
-                    // Call ParseYaml recursively for each element of the list
-                    ParseYaml(list[i], parentName + fieldName + "[" + i + "].");
-                }
-            }
-            // Handle case where the field value is another type of object
-            else
-            {
-                // Print the field value as a string
+                string fieldName = entry.Key;
+                object fieldValue = entry.Value;
+
                 Console.WriteLine("<tr>");
-                Console.WriteLine($"<td>{parentName + fieldName}</td>");
-                Console.WriteLine($"<td>Value</td>");
+                Console.WriteLine($"<td>{parentName}</td>");
+                Console.WriteLine($"<td>{fieldName}</td>");
                 Console.WriteLine($"<td>{GetDatatype(fieldValue)}</td>");
                 Console.WriteLine("</tr>");
+
+                ParseYaml(fieldValue, parentName + fieldName + ".");
+            }
+        }
+        else if (obj is List<object> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                ParseYaml(list[i], parentName + "[" + i + "].");
             }
         }
     }
-}
-
-
 
     static string GetDatatype(object value)
     {
