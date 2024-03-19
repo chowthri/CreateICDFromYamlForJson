@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using YamlDotNet.Serialization;
+using YamlDotNet.RepresentationModel;
 
 class Program
 {
@@ -34,8 +34,11 @@ alias: &foo
   bar: baz
 alias_reuse: *foo";
 
-        var deserializer = new DeserializerBuilder().Build();
-        var yamlObject = deserializer.Deserialize<dynamic>(yamlContent);
+        var input = new StringReader(yamlContent);
+        var yamlStream = new YamlStream();
+        yamlStream.Load(input);
+
+        var rootMappingNode = (YamlMappingNode)yamlStream.Documents[0].RootNode;
 
         Console.WriteLine("<html>");
         Console.WriteLine("<head><title>YAML to HTML Table</title></head>");
@@ -43,21 +46,21 @@ alias_reuse: *foo";
         Console.WriteLine("<table border='1'>");
         Console.WriteLine("<tr><th>ParentName</th><th>FieldName</th><th>Datatype</th></tr>");
 
-        ParseYaml(yamlObject);
+        ParseYaml(rootMappingNode);
 
         Console.WriteLine("</table>");
         Console.WriteLine("</body>");
         Console.WriteLine("</html>");
     }
 
-    static void ParseYaml(dynamic obj, string parentName = "")
+    static void ParseYaml(YamlNode node, string parentName = "")
     {
-        if (obj is Dictionary<string, object> dictionary)
+        if (node is YamlMappingNode mappingNode)
         {
-            foreach (var entry in dictionary)
+            foreach (var entry in mappingNode.Children)
             {
-                string fieldName = entry.Key;
-                object fieldValue = entry.Value;
+                var fieldName = ((YamlScalarNode)entry.Key).Value;
+                var fieldValue = entry.Value;
 
                 Console.WriteLine("<tr>");
                 Console.WriteLine($"<td>{parentName}</td>");
@@ -68,26 +71,42 @@ alias_reuse: *foo";
                 ParseYaml(fieldValue, parentName + fieldName + ".");
             }
         }
-        else if (obj is List<object> list)
+        else if (node is YamlSequenceNode sequenceNode)
         {
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < sequenceNode.Children.Count; i++)
             {
-                ParseYaml(list[i], parentName + "[" + i + "].");
+                ParseYaml(sequenceNode.Children[i], parentName + "[" + i + "].");
             }
         }
     }
 
-    static string GetDatatype(object value)
+    static string GetDatatype(YamlNode node)
     {
-        if (value == null)
-            return "null";
-        else if (value is bool)
-            return "boolean";
-        else if (value is int)
-            return "integer";
-        else if (value is string)
-            return "string";
+        if (node is YamlScalarNode scalarNode)
+        {
+            switch (scalarNode.Tag)
+            {
+                case "tag:yaml.org,2002:null":
+                    return "null";
+                case "tag:yaml.org,2002:bool":
+                    return "boolean";
+                case "tag:yaml.org,2002:int":
+                    return "integer";
+                default:
+                    return "string";
+            }
+        }
+        else if (node is YamlMappingNode)
+        {
+            return "mapping";
+        }
+        else if (node is YamlSequenceNode)
+        {
+            return "sequence";
+        }
         else
+        {
             return "unknown";
+        }
     }
 }
