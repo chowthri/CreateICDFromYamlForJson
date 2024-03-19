@@ -50,41 +50,53 @@ alias_reuse: *foo";
         Console.WriteLine("</html>");
     }
 
-    static void ParseYaml(object obj, string parentName = "")
+   static void ParseYaml(object obj, string parentName = "")
+{
+    if (obj is Dictionary<string, object> dictionary)
     {
-        if (obj is Dictionary<string, object> dictionary)
+        foreach (var entry in dictionary)
         {
-            foreach (var entry in dictionary)
+            // Get the field name
+            string fieldName = entry.Key;
+
+            // Get the field value
+            object fieldValue = entry.Value;
+
+            // If the field value is a string, print it directly
+            if (fieldValue is string)
             {
-                // Check if the value is another nested dictionary
-                if (entry.Value is Dictionary<string, object> nestedDictionary)
+                Console.WriteLine("<tr>");
+                Console.WriteLine($"<td>{parentName}</td>");
+                Console.WriteLine($"<td>{fieldName}</td>");
+                Console.WriteLine($"<td>string</td>");
+                Console.WriteLine("</tr>");
+            }
+            else if (fieldValue is Dictionary<string, object> nestedDictionary)
+            {
+                // If nested dictionary found, call ParseYaml recursively with updated parentName
+                ParseYaml(nestedDictionary, parentName + fieldName + ".");
+            }
+            else if (fieldValue is List<object> list)
+            {
+                // If list found, iterate through its elements
+                for (int i = 0; i < list.Count; i++)
                 {
-                    // If nested dictionary found, call ParseYaml recursively with updated parentName
-                    ParseYaml(nestedDictionary, parentName + entry.Key + ".");
+                    // Call ParseYaml recursively for each element of the list
+                    ParseYaml(list[i], parentName + fieldName + "[" + i + "].");
                 }
-                // Check if the value is a list
-                else if (entry.Value is List<object> list)
-                {
-                    // If list found, iterate through its elements
-                    for (int i = 0; i < list.Count; i++)
-                    {
-                        // Call ParseYaml recursively for each element of the list
-                        ParseYaml(list[i], parentName + entry.Key + "[" + i + "].");
-                    }
-                }
-                // If the value is not a nested dictionary or a list, it's a leaf node (scalar)
-                else
-                {
-                    // Print the information in HTML table row format
-                    Console.WriteLine("<tr>");
-                    Console.WriteLine($"<td>{parentName}</td>");
-                    Console.WriteLine($"<td>{entry.Key}</td>");
-                    Console.WriteLine($"<td>{GetDatatype(entry.Value)}</td>");
-                    Console.WriteLine("</tr>");
-                }
+            }
+            else
+            {
+                // Print the information in HTML table row format
+                Console.WriteLine("<tr>");
+                Console.WriteLine($"<td>{parentName}</td>");
+                Console.WriteLine($"<td>{fieldName}</td>");
+                Console.WriteLine($"<td>{GetDatatype(fieldValue)}</td>");
+                Console.WriteLine("</tr>");
             }
         }
     }
+}
 
     static string GetDatatype(object value)
     {
