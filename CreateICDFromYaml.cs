@@ -1,96 +1,98 @@
 using System;
 using System.Collections.Generic;
+using YamlDotNet.Serialization;
 using System.IO;
-using System.Xml.Serialization;
-using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Wordprocessing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Load YAML data from file
-        string yamlFilePath = "path/to/your/yaml/file.yaml";
-        string yamlData = File.ReadAllText(yamlFilePath);
+        string yamlContent = @"
+json:
+  - rigid
+  - better for data interchange
+yaml: 
+  - slim and flexible
+  - better for configuration
+object:
+  key: value
+  array:
+    - null_value:
+    - boolean: true
+    - integer: 1
+    - alias: &example aliases are like variables
+    - alias: *example
+paragraph: >
+   Blank lines denote
 
-        // Deserialize YAML data
-        var serializer = new XmlSerializer(typeof(ContractData));
-        using (var reader = new StringReader(yamlData))
+   paragraph breaks
+content: |-
+   Or we
+   can auto
+   convert line breaks
+   to save space
+alias: &foo
+  bar: baz
+alias_reuse: *foo";
+
+        var deserializer = new DeserializerBuilder().Build();
+        var yamlObject = deserializer.Deserialize<Dictionary<string, object>>(new StringReader(yamlContent));
+
+        Console.WriteLine("<html>");
+        Console.WriteLine("<head><title>YAML to HTML Table</title></head>");
+        Console.WriteLine("<body>");
+        Console.WriteLine("<table border='1'>");
+        Console.WriteLine("<tr><th>ParentName</th><th>FieldName</th><th>Datatype</th></tr>");
+
+        ParseYaml(yamlObject);
+
+        Console.WriteLine("</table>");
+        Console.WriteLine("</body>");
+        Console.WriteLine("</html>");
+    }
+
+    static void ParseYaml(object obj, string parentName = "")
+    {
+        if (obj is Dictionary<object, object> dictionary)
         {
-            var contractData = (ContractData)serializer.Deserialize(reader);
-
-            // Generate Word document
-            using (var document = WordprocessingDocument.Create("Interface_Contract_Document.docx", WordprocessingDocumentType.Document))
+            foreach (var entry in dictionary)
             {
-                var mainPart = document.AddMainDocumentPart();
-                var body = new Body();
-
-                // Create table
-                var table = new Table();
-                var tableProperties = new TableProperties(
-                    new TableWidth { Type = TableWidthUnitValues.Auto },
-                    new TableLayout { Type = TableLayoutValues.Fixed }
-                );
-                table.AppendChild(tableProperties);
-
-                // Add table header row
-                var headerRow = new TableRow();
-                headerRow.AppendChild(CreateTableCell("ParentName", true));
-                headerRow.AppendChild(CreateTableCell("Field Name", true));
-                headerRow.AppendChild(CreateTableCell("Reference Name", true));
-                table.AppendChild(headerRow);
-
-                // Add content to the table
-                foreach (var item in contractData.Contracts)
+                if (entry.Value is Dictionary<object, object>)
                 {
-                    foreach (var method in item.Methods)
+                    ParseYaml(entry.Value, parentName + entry.Key + ".");
+                }
+                else if (entry.Value is List<object>)
+                {
+                    int index = 0;
+                    foreach (var item in (List<object>)entry.Value)
                     {
-                        var dataRow = new TableRow();
-                        dataRow.AppendChild(CreateTableCell(item.ParentName));
-                        dataRow.AppendChild(CreateTableCell(method.Name));
-                        dataRow.AppendChild(CreateTableCell(method.Reference));
-                        table.AppendChild(dataRow);
+                        ParseYaml(item, parentName + entry.Key + "[" + index + "].");
+                        index++;
                     }
                 }
-
-                // Add table to the document body
-                body.AppendChild(table);
-
-                mainPart.Document = new Document(body);
+                else
+                {
+                    Console.WriteLine("<tr>");
+                    Console.WriteLine($"<td>{parentName}</td>");
+                    Console.WriteLine($"<td>{entry.Key}</td>");
+                    Console.WriteLine($"<td>{GetDatatype(entry.Value)}</td>");
+                    Console.WriteLine("</tr>");
+                }
             }
         }
-
-        Console.WriteLine("Interface Contract Document created successfully!");
     }
 
-    // Helper method to create table cell
-    static TableCell CreateTableCell(string text, bool isHeader = false)
+    static string GetDatatype(object value)
     {
-        var cell = new TableCell(new Paragraph(new Run(new Text(text))));
-        if (isHeader)
-        {
-            cell.TableCellProperties = new TableCellProperties(new TableCellWidth { Type = TableWidthUnitValues.Auto });
-            cell.TableCellProperties.AppendChild(new TableHeader());
-        }
-        return cell;
+        if (value == null)
+            return "null";
+        else if (value is bool)
+            return "boolean";
+        else if (value is int)
+            return "integer";
+        else if (value is string)
+            return "string";
+        else
+            return "unknown";
     }
-}
-
-// Define classes to represent YAML structure
-public class ContractData
-{
-    public List<Contract> Contracts { get; set; }
-}
-
-public class Contract
-{
-    public string ParentName { get; set; }
-    public List<Method> Methods { get; set; }
-}
-
-public class Method
-{
-    public string Name { get; set; }
-    public string Reference { get; set; }
 }
