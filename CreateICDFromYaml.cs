@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using YamlDotNet.Serialization;
-using System.IO;
 
 class Program
 {
@@ -36,7 +35,7 @@ alias: &foo
 alias_reuse: *foo";
 
         var deserializer = new DeserializerBuilder().Build();
-        var yamlObject = deserializer.Deserialize<Dictionary<string, object>>(new StringReader(yamlContent));
+        var yamlObject = deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
 
         Console.WriteLine("<html>");
         Console.WriteLine("<head><title>YAML to HTML Table</title></head>");
@@ -53,25 +52,32 @@ alias_reuse: *foo";
 
     static void ParseYaml(object obj, string parentName = "")
     {
-        if (obj is Dictionary<object, object> dictionary)
+        if (obj is Dictionary<string, object> dictionary)
         {
             foreach (var entry in dictionary)
             {
-                if (entry.Value is Dictionary<object, object>)
+                // Check if the value is another nested dictionary
+                if (entry.Value is Dictionary<object, object> nestedDictionary)
                 {
-                    ParseYaml(entry.Value, parentName + entry.Key + ".");
+                    // If nested dictionary found, call ParseYaml recursively with updated parentName
+                    ParseYaml(nestedDictionary, parentName + entry.Key + ".");
                 }
-                else if (entry.Value is List<object>)
+                // Check if the value is a list
+                else if (entry.Value is List<object> list)
                 {
+                    // If list found, iterate through its elements
                     int index = 0;
-                    foreach (var item in (List<object>)entry.Value)
+                    foreach (var item in list)
                     {
+                        // Call ParseYaml recursively for each element of the list
                         ParseYaml(item, parentName + entry.Key + "[" + index + "].");
                         index++;
                     }
                 }
+                // If the value is not a nested dictionary or a list, it's a leaf node (scalar)
                 else
                 {
+                    // Print the information in HTML table row format
                     Console.WriteLine("<tr>");
                     Console.WriteLine($"<td>{parentName}</td>");
                     Console.WriteLine($"<td>{entry.Key}</td>");
