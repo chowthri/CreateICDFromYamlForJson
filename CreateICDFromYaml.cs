@@ -62,42 +62,37 @@ alias_reuse: *foo";
             // Get the field value
             object fieldValue = entry.Value;
 
-            // If the field value is a string, print it directly
-            if (fieldValue is string)
+            // Print the information in HTML table row format
+            Console.WriteLine("<tr>");
+            Console.WriteLine($"<td>{parentName}</td>");
+            Console.WriteLine($"<td>{fieldName}</td>");
+            Console.WriteLine($"<td>{GetDatatype(fieldValue)}</td>");
+            Console.WriteLine("</tr>");
+
+            // If the field value is a dictionary, recursively parse it
+            if (fieldValue is Dictionary<string, object> nestedDictionary)
             {
-                Console.WriteLine("<tr>");
-                Console.WriteLine($"<td>{parentName}</td>");
-                Console.WriteLine($"<td>{fieldName}</td>");
-                Console.WriteLine($"<td>string</td>");
-                Console.WriteLine("</tr>");
-            }
-            else if (fieldValue is Dictionary<string, object> nestedDictionary)
-            {
-                // If nested dictionary found, call ParseYaml recursively with updated parentName
                 ParseYaml(nestedDictionary, parentName + fieldName + ".");
             }
+            // If the field value is a list, iterate through its elements and recursively parse them
             else if (fieldValue is List<object> list)
             {
-                // If list found, iterate through its elements
                 for (int i = 0; i < list.Count; i++)
                 {
-                    // Call ParseYaml recursively for each element of the list
                     ParseYaml(list[i], parentName + fieldName + "[" + i + "].");
                 }
             }
-            else
-            {
-                // Print the information in HTML table row format
-                Console.WriteLine("<tr>");
-                Console.WriteLine($"<td>{parentName}</td>");
-                Console.WriteLine($"<td>{fieldName}</td>");
-                Console.WriteLine($"<td>{GetDatatype(fieldValue)}</td>");
-                Console.WriteLine("</tr>");
-            }
+        }
+    }
+    else if (obj is List<object> list)
+    {
+        // If the object is a list, iterate through its elements and recursively parse them
+        for (int i = 0; i < list.Count; i++)
+        {
+            ParseYaml(list[i], parentName + "[" + i + "].");
         }
     }
 }
-
     static string GetDatatype(object value)
     {
         if (value == null)
