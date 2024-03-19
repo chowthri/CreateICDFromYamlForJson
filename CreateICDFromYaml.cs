@@ -82,30 +82,36 @@ alias_reuse: *foo";
 
     static string GetDatatype(YamlNode node)
 {
-    switch (node.NodeType)
+    if (node is YamlScalarNode scalarNode)
     {
-        case YamlNodeType.Scalar:
-            var scalarNode = (YamlScalarNode)node;
-            switch (scalarNode.Tag)
-            {
-                case "tag:yaml.org,2002:null":
-                    return "null";
-                case "tag:yaml.org,2002:bool":
-                    return "boolean";
-                case "tag:yaml.org,2002:int":
-                    return "integer";
-                case "tag:yaml.org,2002:str":
-                    return "string";
-                default:
-                    return "unknown";
-            }
-        case YamlNodeType.Sequence:
-            return "sequence";
-        case YamlNodeType.Mapping:
-            return "object";
-        default:
-            return "unknown";
+        string tag = scalarNode.Tag.ToString();
+        switch (tag)
+        {
+            case "tag:yaml.org,2002:null":
+                return "null";
+            case "tag:yaml.org,2002:bool":
+                return "boolean";
+            case "tag:yaml.org,2002:int":
+                return "integer";
+            case "tag:yaml.org,2002:str":
+                return "string";
+            default:
+                return "unknown";
+        }
+    }
+    else if (node is YamlSequenceNode)
+    {
+        return "sequence";
+    }
+    else if (node is YamlMappingNode)
+    {
+        return "object";
+    }
+    else
+    {
+        return "unknown";
     }
 }
+
 
 }
