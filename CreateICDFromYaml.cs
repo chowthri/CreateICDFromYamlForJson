@@ -57,7 +57,7 @@ alias_reuse: *foo";
             foreach (var entry in dictionary)
             {
                 // Check if the value is another nested dictionary
-                if (entry.Value is Dictionary<object, object> nestedDictionary)
+                if (entry.Value is Dictionary<string, object> nestedDictionary)
                 {
                     // If nested dictionary found, call ParseYaml recursively with updated parentName
                     ParseYaml(nestedDictionary, parentName + entry.Key + ".");
@@ -66,12 +66,10 @@ alias_reuse: *foo";
                 else if (entry.Value is List<object> list)
                 {
                     // If list found, iterate through its elements
-                    int index = 0;
-                    foreach (var item in list)
+                    for (int i = 0; i < list.Count; i++)
                     {
                         // Call ParseYaml recursively for each element of the list
-                        ParseYaml(item, parentName + entry.Key + "[" + index + "].");
-                        index++;
+                        ParseYaml(list[i], parentName + entry.Key + "[" + i + "].");
                     }
                 }
                 // If the value is not a nested dictionary or a list, it's a leaf node (scalar)
