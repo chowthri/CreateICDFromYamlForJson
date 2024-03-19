@@ -50,7 +50,7 @@ alias_reuse: *foo";
         Console.WriteLine("</html>");
     }
 
-   static void ParseYaml(object obj, string parentName = "")
+  static void ParseYaml(object obj, string parentName = "")
 {
     if (obj is Dictionary<string, object> dictionary)
     {
@@ -69,12 +69,11 @@ alias_reuse: *foo";
             Console.WriteLine($"<td>{GetDatatype(fieldValue)}</td>");
             Console.WriteLine("</tr>");
 
-            // If the field value is a dictionary, recursively parse it
+            // If the field value is a dictionary or list, recursively parse it
             if (fieldValue is Dictionary<string, object> nestedDictionary)
             {
                 ParseYaml(nestedDictionary, parentName + fieldName + ".");
             }
-            // If the field value is a list, iterate through its elements and recursively parse them
             else if (fieldValue is List<object> list)
             {
                 for (int i = 0; i < list.Count; i++)
@@ -84,15 +83,8 @@ alias_reuse: *foo";
             }
         }
     }
-    else if (obj is List<object> list)
-    {
-        // If the object is a list, iterate through its elements and recursively parse them
-        for (int i = 0; i < list.Count; i++)
-        {
-            ParseYaml(list[i], parentName + "[" + i + "].");
-        }
-    }
 }
+
 
     static string GetDatatype(object value)
     {
